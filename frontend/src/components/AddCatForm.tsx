@@ -6,14 +6,16 @@ import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { X, Upload, FileArchive, AlertCircle } from "lucide-react";
 import type { Cat } from "./CatManagement";
+import axios from "axios";
 
 interface AddCatFormProps {
   onClose: () => void;
   onSubmit: (catData: Omit<Cat, 'id' | 'lastCheckup'>) => void;
   editingCat?: Cat | null;
+  userId?: string | number; // 추가-jks : 고양이 프로필 이미지 경로 저장을 위해 사용자 식별자 전달 받기
 }
 
-export function AddCatForm({ onClose, onSubmit, editingCat }: AddCatFormProps) {
+export function AddCatForm({ onClose, onSubmit, editingCat, userId }: AddCatFormProps) {
   const [formData, setFormData] = useState({
     name: editingCat?.name || '',
     breed: editingCat?.breed || '',
@@ -27,30 +29,55 @@ export function AddCatForm({ onClose, onSubmit, editingCat }: AddCatFormProps) {
 
   const [imagePreview, setImagePreview] = useState<string>(editingCat?.image || '');
   const [trainingDataFile, setTrainingDataFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null); // 추가-jks : 고양이 프로필 사진 (실제 파일 보관)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    /**
-    if (!formData.name.trim() || !formData.breed.trim() || !formData.age.trim() || !formData.weight.trim()) {
-      alert('필수 항목을 모두 입력해주세요.');
-      return;
+
+    let imagePathForDb = editingCat?.image || ""; // 추가-jks : 고양이 프로필 사진 (DB에 저장할 이미지 경로:절대경로)
+                                                  // 기본은 편집 중 이미지가 있으면 그걸 사용
+
+    // 추가-jks : try-catch 추가
+    try{
+      // 새 이미지가 선택되었다면, 먼저 업로드 API로 저장
+      if (imageFile && userId) {
+        const fd = new FormData();
+        fd.append("file", imageFile);
+        fd.append("userId", String(userId));
+
+        const res = await axios.post(`/api/upload/cat-image`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        });
+
+        // 서버가 반환: { savedPath: "/app/public/<userId>/<filename>.jpg", publicUrl: "/public/<userId>/<filename>.jpg" }
+        imagePathForDb = res.data?.savedPath || imagePathForDb;
+      }
+
+      const catData: Omit<Cat, 'id' | 'lastCheckup'> = {
+        name: formData.name,
+        breed: formData.breed,
+        age: formData.age,
+        weight: formData.weight,
+        gender: formData.gender,
+        healthStatus: formData.healthStatus,
+        memo: formData.memo,
+        image: imagePathForDb // 스펙대로 DB에는 '/app/public/...jpg' 절대경로 문자열을 보냄
+        // image: imagePreview
+      };
+
+      onSubmit(catData);
+    } catch (err){
+      console.error("이미지 업로드 실패:", err);
+      alert("이미지 업로드 중 오류가 발생했습니다.");
     }
-       */
-    const catData: Omit<Cat, 'id' | 'lastCheckup'> = {
-      name: formData.name,
-      breed: formData.breed,
-      age: formData.age,
-      weight: formData.weight,
-      gender: formData.gender,
-      healthStatus: formData.healthStatus,
-      memo: formData.memo,
-      image: imagePreview
-    };
-    onSubmit(catData);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (!file) return; // 추가-jks
+    setImageFile(file); // 추가-jks : 실제 파일 저장
+
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {

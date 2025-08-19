@@ -31,6 +31,28 @@ interface CatManagementProps {
   onDeleteCat: (catId: number) => void;
 }
 
+// 추가-jks : 고양이 프로필 사진 유틸 함수(경로 필터링)
+// const toPublicUrl = (p?: string) => {
+//   if (!p) return "";
+//   // 이미 웹 경로/절대 URL이면 그대로 사용
+//   if (p.startsWith("/public/") || p.startsWith("http://") || p.startsWith("https://")) return p;
+//   // /app/public/... → /public/...
+//   return p.startsWith("/app/") ? p.replace("/app", "") : p;
+// };
+
+// 추가-jks : 고양이 프로필 사진 유틸 함수(경로 필터링)
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const toPublicUrl = (p?: string) => {
+  if (!p) return "";
+  // 이미 절대 URL이면 그대로
+  if (/^https?:\/\//i.test(p)) return p;
+  // '/app/public/... → /public/...'
+  const path = p.startsWith("/app/") ? p.replace("/app", "") : p;
+  // API_BASE가 비어있으면 그대로 '/public/..'로 반환 → Vite가 가로채므로 반드시 API_BASE 세팅 필요
+  console.log("CatImagePath",`${API_BASE}${path}`)
+  return `${API_BASE}${path}`;
+};
+
 export function CatManagement({ cats, onAddCat, onEditCat, onDeleteCat }: CatManagementProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -168,10 +190,13 @@ export function CatManagement({ cats, onAddCat, onEditCat, onDeleteCat }: CatMan
           {filteredCats.map((cat) => (
             <Card key={cat.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
-                {/* Cat Image */}
+                {/* Cat Image : 추가-jks : toPublicUrl 추가*/}
                 <div className="w-full h-48 bg-gray-200 rounded-lg mb-4 overflow-hidden">
                   <ImageWithFallback
-                    src={cat.image || `https://images.unsplash.com/photo-1574158622682-e40e69881006?w=200&h=200&fit=crop&crop=face`}
+                    src={
+                      toPublicUrl(cat.image) ||
+                      `https://images.unsplash.com/photo-1574158622682-e40e69881006?w=200&h=200&fit=crop&crop=face`
+                    }
                     alt={cat.name}
                     className="w-full h-full object-cover"
                   />

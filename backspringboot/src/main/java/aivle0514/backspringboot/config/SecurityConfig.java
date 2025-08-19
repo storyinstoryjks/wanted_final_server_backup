@@ -12,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,6 +20,13 @@ import java.util.List;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+    // 추가 보안 무시 목록
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return web -> web.ignoring()
+                .requestMatchers("/public/**", "/favicon.ico", "/assets/**", "/error");
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -56,10 +63,13 @@ public class SecurityConfig {
 
                 // [수정] 🔐 API 경로별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
+                        // 추가-jks : 이미지 업로드 API와 정적 리소스는 인증 없이 허용 (고양이 프로필 사진)
+                        .requestMatchers("/api/upload/cat-image").permitAll()
+                        .requestMatchers("/public/**").permitAll()
                         // 아래 API들은 인증 없이 누구나 접근 가능
-                        .requestMatchers("/api/user/signup", "/api/user/login", "/api/user/reset-password").permitAll()
+                        .requestMatchers("/api/user/**").permitAll() // 원본 : .requestMatchers("/api/user/signup", "/api/user/login", "/api/user/reset-password").permitAll()
                         // /api/user/me, /api/user/logout 등 그 외 /api/user/ 경로는 인증 필요
-                        .requestMatchers("/api/user/**").authenticated()
+                        .requestMatchers("/api/**").authenticated() // 원본 : .requestMatchers("/api/user/**").authenticated()
                         // 나머지 모든 요청은 인증된 사용자만 접근 가능
                         .anyRequest().authenticated()
                 );
