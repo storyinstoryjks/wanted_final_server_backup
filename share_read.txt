@@ -1,0 +1,34 @@
+[손재경 파트 프론트 설정]
+<기존의 springboot 실행 시, 42 omit... 오류 발생 해결>
+=> init.sql의 questions테이블 및 question_answers의 id 타입 BIGINT로 통일
+=> github 취합 시 확인 가능(또는 각자 바꿔도 됨)
+
+<고양이 등록 관련 사전 설정 필요>
+zip관련 및 azure 관련 라이브러리 설치 및 docker 연동
+1. 로컬에서 설치
+=> 터미널 경로 잘 확인! :  gitpod /workspace/wantedcat/frontend
+=> 라이브러리 설치 전, node_modules 및 package-lock.json 삭제
+=> 라이브러리 설치 : $ npm i @azure/storage-blob unzipit mime
+=> $ npm i sonner
+=> $ npm install
+=> node_modules와 package-lock.json 생성되었는지 확인
+
+2. collectionservice -> main.py -> generate_sas_url()
+=> permisson에서 write=True와 read=True있는지 확인 (write=True, read=True)
+
+3. frontend/.env
+=> 추가 : VITE_X_API_KEY='Yo'
+
+3. docker 실행
+* 웹사이트 첫 접속 시 unzip 또는 sonner 라이브러리를 찾을 수 없다는 오류 방지 *
+다음 순서대로 진행
+$ 모든 docker 서버 중단 (ctrl + c)
+$ docker system prune -a (y 입력) (모든 컨테이너 이미지와 network가 다 사라짐) (docker image ls, docker network ls로 확인 가능)
+$ docker compose down -v (volume 삭제)
+$ docker network create my-shared-network
+$ npm i @azure/storage-blob unzipit mime
+$ npm i sonner
+$ npm install
+(frontend > Dockerfile의 코드 확인) : (RUN npm install -> RUN npm ci)
+$ DB -> springboot -> collectionservice -> aiservice ->  frontend 순으로 docker 서버 실행 (docker-compose up --build) (수집서버와 ai서버 .env미리 준비)
+이후, 웹사이트 접속 시 정상적으로 동작됨을 확인
