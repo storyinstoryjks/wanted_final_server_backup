@@ -12,7 +12,7 @@ COPY package*.json ./
 RUN apt-get update && apt-get install -y openjdk-17-jdk && rm -rf /var/lib/apt/lists/*
 
 # 의존성 설치
-RUN npm install
+RUN npm ci
 
 # 소스 코드 복사
 COPY . .

@@ -46,7 +46,7 @@ async def generate_sas_url(request: schemas.SasRequest):
         container_name=container_name,
         blob_name=blob_name,
         account_key=blob_service_client.credential.account_key,
-        permission=BlobSasPermissions(write=True),
+        permission=BlobSasPermissions(write=True, read=True),
         expiry=datetime.utcnow() + timedelta(minutes=10)
     )
 

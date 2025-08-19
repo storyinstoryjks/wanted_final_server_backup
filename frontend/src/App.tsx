@@ -75,6 +75,8 @@ import {
   filterAndSortData,
   getCounts,
 } from "./utils/dataFilters";
+import { Toaster } from "sonner"; // 추가-jks : Toast 알림
+
 
 axios.defaults.withCredentials = true;
 const VITE_API_URL = import.meta.env.VITE_API_URL;
@@ -262,7 +264,8 @@ const MainContent = ({
         cats = {cats}
         onAddCat={() => setShowAddCatForm(true)}
         onEditCat={handleEditClick}
-        onDeleteCat={handleDeleteCat} />;
+        onDeleteCat={handleDeleteCat} 
+        currentUser={currentUser} />;
       }
       if (currentManagement === "devices") {
         return <DeviceManagement 
@@ -941,6 +944,9 @@ const handleEditClick = (item: any) => {
       >
         <Menu className="h-6 w-6" />
       </button>
+      
+      {/* 추가-jks : Toast 알림 */}
+      <Toaster position="top-center" closeButton richColors />
 
       {/* --- 폼 및 모달 --- */}
       

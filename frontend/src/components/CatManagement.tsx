@@ -4,6 +4,9 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Plus, Heart, Calendar, Weight, Stethoscope, Edit, Trash2 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import type { UserData } from "../types";
+import axios from "axios";
+import { toast } from "sonner"; // 추가-jks : toast 이벤트 발생
 
 export interface Cat {
   id: number;
@@ -29,6 +32,7 @@ interface CatManagementProps {
   onAddCat: () => void;
   onEditCat: (cat: Cat) => void;
   onDeleteCat: (catId: number) => void;
+  currentUser: UserData;
 }
 
 // 추가-jks : 고양이 프로필 사진 유틸 함수(경로 필터링)
@@ -53,7 +57,10 @@ const toPublicUrl = (p?: string) => {
   return `${API_BASE}${path}`;
 };
 
-export function CatManagement({ cats, onAddCat, onEditCat, onDeleteCat }: CatManagementProps) {
+// 추가-jks : x-api-key
+const API_KEY_HEADER = import.meta.env.VITE_X_API_KEY;
+
+export function CatManagement({ cats, onAddCat, onEditCat, onDeleteCat, currentUser }: CatManagementProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredCats = cats.filter(cat =>
@@ -81,6 +88,41 @@ export function CatManagement({ cats, onAddCat, onEditCat, onDeleteCat }: CatMan
       default: return '알 수 없음';
     }
   };
+
+  // 추가-jks : YOLO모델(2번) 생성을 위한 핸들러 함수 (제출용)
+  async function postAiServerForMakeYolo_submit() {
+    // alert(`사용자ID: ${currentUser.id}`);
+    // ai서버와 통신되서 YOLO모델2번 생성 파이프라인 동작되는거 확인
+    // 즉, 제출용 코드이고, 시연용은 주석해제되있는 부분임
+    try {
+      const res = await axios.post(
+          "/collection/api/model",
+          { user_id: String(currentUser.id) },
+          { headers: {"X-API-Key": API_KEY_HEADER, "Content-Type": "application/json" } }
+        );
+      const { message } = res.data as { status_code: string; message: string };
+      console.log("aiserver 사용자 업로드 사진 준비 완료:",message);
+    } catch (err: any) {
+      console.log("aiserver 사용자 업로드 준비 요청 실패: ", String(err));
+    }
+  }
+  // 추가-jks : YOLO모델(2번) 생성을 위한 핸들러 함수 (시연용)
+  function postAiServerForMakeYolo_protype() {
+    //alert(`사용자ID: ${currentUser.id}`);
+    // toast.success(`${currentUser?.id ?? "알 수 없음"}님을 위한 맞춤형 AI가 준비되고 있습니다. 고양이 식사 및 음수 자동 기록 서비스 제공 시작까지 2~3시간 정도 기다려주시길 양해부탁드립니다. 똑똑하고 멋진 AI로 거듭나 고객님을 만족시켜드리겠습니다.`);
+    toast.success("맞춤형 AI 준비 중", {
+      description: (
+        <div style={{padding:'5px'}} className="space-y-1">
+          <p style={{marginBottom:"15px"}}><span className="font-semibold">{currentUser?.username ?? "고객"}</span> 님을 위한 맞춤형 AI가 준비되고 있습니다.</p>
+          <p style={{marginBottom:"15px"}}>고양이 식사 및 음수 자동 기록 서비스 제공 시작까지 <span className="font-semibold">2~3시간</span> 정도 기다려주시길 양해 부탁드립니다.</p>
+          <p className="font-medium">똑똑하고 멋진 AI로 거듭나 고객님을 만족시켜드리겠습니다.</p>
+        </div>
+      ),
+      duration: 4000,
+      className: "border border-green-200 shadow-lg", // 테두리/그림자 등 커스텀
+    });
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -89,10 +131,16 @@ export function CatManagement({ cats, onAddCat, onEditCat, onDeleteCat }: CatMan
           <h1 className="text-2xl font-medium mb-2">고양이 관리</h1>
           <p className="text-muted-foreground">등록된 고양이들을 관리하고 건강 상태를 확인하세요.</p>
         </div>
-        <Button onClick={onAddCat} className="bg-primary hover:bg-primary/90">
-          <Plus className="w-4 h-4 mr-2" />
-          고양이 등록
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={postAiServerForMakeYolo_protype} className="bg-primary hover:bg-primary/90">
+            <Plus className="w-4 h-4 mr-2" />
+            AI 훈련 시작
+          </Button>
+          <Button onClick={onAddCat} className="bg-primary hover:bg-primary/90">
+            <Plus className="w-4 h-4 mr-2" />
+            고양이 등록
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
